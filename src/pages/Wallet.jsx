@@ -13,7 +13,7 @@ import WalletConnectIcon from "../assets/Wallet/WalletConnect.png";
 
 export default function WalletPage() {
   const navigate = useNavigate();
-
+//
   const { address, isConnected } = useAccount();
   const { connectAsync, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
@@ -22,7 +22,7 @@ export default function WalletPage() {
   const isConnectingRef = useRef(false);
 
   // -----------------------------
-  // Detect Telegram environment
+  // Detect Telegram environment Wallet
   // -----------------------------
   const isTelegram =
     typeof window !== "undefined" &&
