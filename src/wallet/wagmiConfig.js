@@ -23,6 +23,9 @@ export const wagmiConfig = createConfig({
     walletConnect({
       projectId,
       showQrModal: true,
+      qrModalOptions: {
+        themeMode: "dark",
+      },
     }),
 
     // ⚠️ Coinbase FIX (avoid Smart Wallet crash in Telegram)

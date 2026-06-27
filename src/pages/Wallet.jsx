@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { ArrowLeft, Wallet, ShieldCheck, Coins } from "lucide-react";
+import { ArrowLeft, Wallet } from "lucide-react";
 
 import BottomNav from "../components/BottomNav";
 import StakingPanel from "../components/StakingPanel";
-import { useEffect } from "react";
 
-// your icons
-import MetaMaskIcon from "../assets/Wallet/Metamask.png";
+// Wallet icons
+import MetaMaskIcon from "../assets/Wallet/MetaMask.png";
 import CoinbaseIcon from "../assets/Wallet/Coinbase.png";
 import WalletConnectIcon from "../assets/Wallet/WalletConnect.png";
 
@@ -15,105 +15,67 @@ export default function WalletPage() {
   const navigate = useNavigate();
 
   const { address, isConnected } = useAccount();
-  const {
-  connectAsync,
-  connectors,
-  isPending,
-} = useConnect();
-
- console.log("Connectors:", connectors);
-
-connectors.forEach((c) => {
-  console.log({
-    id: c.id,
-    name: c.name,
-    type: c.type,
-  });
-});
-
-useEffect(() => {
-  const printTimes = () => {
-    const now = new Date();
-
-    console.log("================================");
-    console.log("🖥️ Local Date :", now.toString());
-    console.log("🌍 UTC Date   :", now.toUTCString());
-    console.log("📅 ISO        :", now.toISOString());
-
-    console.log(
-      "⏰ Unix (ms):",
-      now.getTime()
-    );
-
-    console.log(
-      "⏰ Unix (sec):",
-      Math.floor(now.getTime() / 1000)
-    );
-
-    console.log(
-      "Timezone:",
-      Intl.DateTimeFormat().resolvedOptions().timeZone
-    );
-
-    console.log(
-      "UTC Offset (minutes):",
-      now.getTimezoneOffset()
-    );
-
-    console.log("================================");
-  };
-
-  printTimes();
-}, []);
-
+  const { connectAsync, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
 
-  // -------------------------
-  // CONNECT HANDLER (IMPORTANT FIX)
-  // -------------------------
-const handleConnect = async (connectorId) => {
-  try {
-    const connector = connectors.find(
-      (c) => c.id === connectorId
-    );
+  const [loading, setLoading] = useState(false);
 
-    if (!connector) {
-      console.error(
-        "❌ Connector not found:",
-        connectorId
-      );
-      console.log(connectors);
-      return;
-    }
+  // -----------------------------
+  // Detect Telegram environment
+  // -----------------------------
+  const isTelegram =
+    typeof window !== "undefined" &&
+    window.Telegram?.WebApp;
 
-    console.log(
-      "🔗 Connecting with:",
-      connector.name
-    );
-
-    const result = await connectAsync({
-      connector,
+  // -----------------------------
+  // Clear stuck WalletConnect sessions
+  // -----------------------------
+  useEffect(() => {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.toLowerCase().includes("walletconnect")) {
+        localStorage.removeItem(key);
+      }
     });
 
-    console.log(
-      "✅ Connected:",
-      result
-    );
+    sessionStorage.clear();
+  }, []);
 
-  } catch (err) {
-    console.error(
-      "❌ Wallet connect error:",
-      err
-    );
-  }
-};
+  // -----------------------------
+  // Safe connect handler
+  // -----------------------------
+  const handleConnect = async (connectorId) => {
+    try {
+      const connector = connectors.find(
+        (c) => c.id === connectorId
+      );
+
+      if (!connector) {
+        console.error("Connector not found:", connectorId);
+        return;
+      }
+
+      if (loading) return;
+
+      setLoading(true);
+
+      console.log("🔗 Connecting:", connector.name);
+
+      await connectAsync({ connector });
+
+      console.log("✅ Connected:", address);
+
+    } catch (err) {
+      console.error("❌ Wallet connect error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#020617] pb-24 text-white">
 
       {/* HEADER */}
       <div className="p-4 flex items-center justify-between">
-
         <button
           onClick={() => navigate(-1)}
           className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center"
@@ -128,7 +90,6 @@ const handleConnect = async (connectorId) => {
 
       {/* WALLET STATUS */}
       <div className="px-4">
-
         <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-4">
 
           <div className="flex items-center gap-3">
@@ -151,34 +112,36 @@ const handleConnect = async (connectorId) => {
 
           </div>
 
-          {isConnected ? (
+          {isConnected && (
             <button
               onClick={() => disconnect()}
               className="mt-4 w-full py-2 rounded-lg bg-red-500 text-white font-bold"
             >
               Disconnect
             </button>
-          ) : null}
+          )}
 
         </div>
-
       </div>
 
-      {/* WALLET CONNECT OPTIONS (ONLY THIS SECTION) */}
+      {/* WALLET OPTIONS */}
       <div className="px-4 mt-5">
 
         <div className="grid grid-cols-3 gap-3">
 
-          {/* METAMASK */}
+          {/* META MASK (disabled in Telegram for safety) */}
           <button
+            disabled={isTelegram}
             onClick={() => handleConnect("metaMaskSDK")}
-            className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center hover:border-orange-500 transition"
+            className={`bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center transition ${
+              isTelegram ? "opacity-40 cursor-not-allowed" : "hover:border-orange-500"
+            }`}
           >
             <img src={MetaMaskIcon} className="w-12 h-12 mb-2" />
             <span className="text-sm">MetaMask</span>
           </button>
 
-          {/* WALLETCONNECT */}
+          {/* WALLETCONNECT (MAIN SAFE OPTION) */}
           <button
             onClick={() => handleConnect("walletConnect")}
             className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center hover:border-purple-500 transition"
@@ -187,10 +150,13 @@ const handleConnect = async (connectorId) => {
             <span className="text-sm">WalletConnect</span>
           </button>
 
-          {/* COINBASE */}
+          {/* COINBASE (disabled in Telegram) */}
           <button
+            disabled={isTelegram}
             onClick={() => handleConnect("coinbaseWalletSDK")}
-            className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center hover:border-blue-500 transition"
+            className={`bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center transition ${
+              isTelegram ? "opacity-40 cursor-not-allowed" : "hover:border-blue-500"
+            }`}
           >
             <img src={CoinbaseIcon} className="w-12 h-12 mb-2" />
             <span className="text-sm">Coinbase</span>
@@ -198,9 +164,9 @@ const handleConnect = async (connectorId) => {
 
         </div>
 
-        {isPending && (
+        {(loading || isPending) && (
           <div className="text-center text-yellow-400 mt-3">
-            Connecting...
+            Connecting wallet...
           </div>
         )}
 
@@ -209,38 +175,14 @@ const handleConnect = async (connectorId) => {
       {/* STAKING */}
       <div className="px-4 mt-6">
 
-        <div className="flex items-center gap-2 mb-2">
-          <ShieldCheck className="text-yellow-400" />
-          <h2 className="text-lg font-bold">BARIN Staking</h2>
+        <div className="mb-2 text-lg font-bold">
+          BARIN Staking
         </div>
 
         <StakingPanel />
-
-      </div>
-
-      {/* TIER */}
-      <div className="px-4 mt-6">
-
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-
-          <div className="flex items-center gap-2 mb-2">
-            <Coins className="text-yellow-400" />
-            <h3 className="font-bold">Tier System</h3>
-          </div>
-
-          <ul className="text-sm text-slate-300 space-y-1">
-            <li>• Higher XP rewards</li>
-            <li>• Exclusive missions</li>
-            <li>• NFT drops (future)</li>
-            <li>• Game multipliers</li>
-          </ul>
-
-        </div>
-
       </div>
 
       <BottomNav />
-
     </div>
   );
 }
