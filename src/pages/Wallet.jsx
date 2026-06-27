@@ -19,6 +19,7 @@ export default function WalletPage() {
   const { disconnect } = useDisconnect();
 
   const [loading, setLoading] = useState(false);
+  const isConnectingRef = useRef(false);
 
   // -----------------------------
   // Detect Telegram environment
@@ -26,6 +27,13 @@ export default function WalletPage() {
   const isTelegram =
     typeof window !== "undefined" &&
     window.Telegram?.WebApp;
+
+  const allowedConnectors = connectors.filter((c) => {
+  if (isTelegram) {
+    return c.id === "walletConnect";
+  }
+  return true;
+});
 
   // -----------------------------
   // Clear stuck WalletConnect sessions
@@ -43,33 +51,28 @@ export default function WalletPage() {
   // -----------------------------
   // Safe connect handler
   // -----------------------------
-  const handleConnect = async (connectorId) => {
-    try {
-      const connector = connectors.find(
-        (c) => c.id === connectorId
-      );
+ const handleConnect = async (connectorId) => {
+  if (isConnectingRef.current) return;
 
-      if (!connector) {
-        console.error("Connector not found:", connectorId);
-        return;
-      }
+  isConnectingRef.current = true;
 
-      if (loading) return;
+  try {
+    const connector = connectors.find(
+      (c) => c.id === connectorId
+    );
 
-      setLoading(true);
+    if (!connector) return;
 
-      console.log("🔗 Connecting:", connector.name);
+    console.log("Connecting:", connector.name);
 
-      await connectAsync({ connector });
+    await connectAsync({ connector });
 
-      console.log("✅ Connected:", address);
-
-    } catch (err) {
-      console.error("❌ Wallet connect error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    console.error(err);
+  } finally {
+    isConnectingRef.current = false;
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#020617] pb-24 text-white">

@@ -13,8 +13,22 @@ import Login from "./auth/Login";
 import EducationDetail from "./pages/EducationDetail";
 import Home from "./pages/Home.jsx"
 import WalletPage from "./pages/Wallet";
+import { useEffect, useState } from "react";
 
 function App() {
+
+  useEffect(() => {
+  try {
+    // Clear ALL wallet sessions
+    localStorage.removeItem("walletconnect");
+    localStorage.removeItem("WALLETCONNECT_DEEPLINK_CHOICE");
+    sessionStorage.clear();
+  } catch (e) {
+    console.log("Wallet reset skipped");
+  }
+}, []);
+
+
   return (
     <BrowserRouter>
       <Routes>
