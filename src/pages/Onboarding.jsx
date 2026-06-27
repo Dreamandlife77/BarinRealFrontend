@@ -184,7 +184,7 @@ export default function Onboarding() {
         <div className="pb-10">
 
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/wallet")}
             className="
               w-full
               h-14
