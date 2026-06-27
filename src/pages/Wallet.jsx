@@ -7,7 +7,7 @@ import BottomNav from "../components/BottomNav";
 import StakingPanel from "../components/StakingPanel";
 
 // Wallet icons
-import MetaMaskIcon from "../assets/Wallet/MetaMask.png";
+import MetaMaskIcon from "../assets/Wallet/Metamask.png";
 import CoinbaseIcon from "../assets/Wallet/Coinbase.png";
 import WalletConnectIcon from "../assets/Wallet/WalletConnect.png";
 
